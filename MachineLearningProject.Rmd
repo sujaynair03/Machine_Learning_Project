@@ -1,0 +1,80 @@
+---
+title: "MachineLearningProject"
+author: "Sujay Nair"
+date: "7/12/2019"
+output: html_document
+---
+
+In this project we will analyze the Weight Lifting Dataset and train a model in order to predict the manner in which the participant did the exercise. 
+
+```{r setup, include=FALSE}
+library(caret)
+library(kernlab)
+library(ggplot2)
+library(ISLR)
+library(AppliedPredictiveModeling)
+library(Hmisc)
+library(dplyr)
+library(rattle)
+library(randomForest)
+library(ElemStatLearn)
+library("e1071")
+library("gbm")
+library("pgmm")
+library("forecast")
+```
+
+
+
+###Data Reading
+
+```{r reading}
+training <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+```
+
+
+###Data Cleaning:
+Several of the columns contain all NAs so it's ok to remove these columns from the dataset. While looking through the data, we see columns with nothing so those colums are also removed.
+```{r cleaning}
+training <- training[, c(2:10 ,36:49, 60:68, 84:86, 102, 113:124, 140, 151:160)]
+testing <- testing[, c(2:10 ,36:49, 60:68, 84:86, 102, 113:124, 140, 151:160)]
+notna <- !as.logical(colSums(is.na(training)))
+training <- training[, notna]
+testing <- testing[,notna]
+```
+
+###Exploratory Data Analysis
+Here we see that the classe "A" occurs the most and we can see the numbers.
+```{r plots, echo=FALSE}
+barplot((table(training$classe)), col = "black")
+```
+
+###Creating Validation Sets
+15000 is approximately 75% of the data so we split the training into 75% validation training and 25% validation testing.
+```{r validation}
+inTrain = sample(nrow(training), 15000)
+
+validationtrain = training[inTrain,]
+validationtest = training[-inTrain,]
+```
+
+###Model Training and Estimate Sample Error
+In this scenario, we use one "gbm" model to predict instead of stacking. We then predicted on the validation test set and got an accuracy. Then we predicted on the real testing data to get the answers. 
+```{r training}
+mod1 <- train(classe ~., method = "gbm", trControl=trainControl("none"), data = validationtrain, verbose = TRUE)
+
+predval <- predict(mod1, validationtest)
+print(mean(predval == validationtest$classe))
+
+predtest <- predict(mod1, testing)
+
+```
+We recieved a accuracy of around 80% so we can expect something similar to this on the test set. I had a score of 16/20 or 80% on the quiz testing these values
+
+
+
+
+
+
+
